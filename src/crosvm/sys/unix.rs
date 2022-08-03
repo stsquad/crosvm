@@ -452,6 +452,10 @@ fn create_virtio_devices(
         devs.push(create_vhost_user_vsock_device(cfg.protected_vm, vsock)?);
     }
 
+    for rng in &cfg.vhost_user_rng {
+        devs.push(create_vhost_user_rng_device(cfg.protected_vm, rng)?);
+    }
+
     for opt in &cfg.vhost_user_wl {
         devs.push(create_vhost_user_wl_device(cfg.protected_vm, opt)?);
     }

@@ -34,7 +34,7 @@ use devices::virtio::vhost::user::vmm::Snd as VhostUserSnd;
 use devices::virtio::vhost::user::vmm::{
     Block as VhostUserBlock, Console as VhostUserConsole, Fs as VhostUserFs,
     Mac80211Hwsim as VhostUserMac80211Hwsim, Net as VhostUserNet, Vsock as VhostUserVsock,
-    Wl as VhostUserWl,
+    Wl as VhostUserWl, Rng as VhostUserRng
 };
 use devices::virtio::vhost::vsock::VhostVsockConfig;
 #[cfg(any(feature = "video-decoder", feature = "video-encoder"))]
@@ -800,6 +800,20 @@ pub fn create_vhost_user_vsock_device(
 ) -> DeviceResult {
     let dev = VhostUserVsock::new(virtio::base_features(protected_vm), &opt.socket)
         .context("failed to set up vhost-user vsock device")?;
+
+    Ok(VirtioDeviceStub {
+        dev: Box::new(dev),
+        // no sandbox here because virtqueue handling is exported to a different process.
+        jail: None,
+    })
+}
+
+pub fn create_vhost_user_rng_device(
+    protected_vm: ProtectionType,
+    opt: &VhostUserOption,
+) -> DeviceResult {
+    let dev = VhostUserRng::new(virtio::base_features(protected_vm), &opt.socket)
+        .context("failed to set up vhost-user rng device")?;
 
     Ok(VirtioDeviceStub {
         dev: Box::new(dev),

@@ -22,6 +22,7 @@ cfg_if::cfg_if! {
         mod gpu;
         mod mac80211_hwsim;
         mod net;
+        mod rng;
         #[cfg(feature = "audio")]
         mod snd;
         mod vsock;
@@ -30,6 +31,7 @@ cfg_if::cfg_if! {
         #[cfg(feature = "audio")]
         pub use self::snd::*;
         pub use self::vsock::*;
+        pub use self::rng::*;
         pub use self::wl::*;
         pub use self::net::*;
         pub use self::mac80211_hwsim::*;
