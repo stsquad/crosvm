@@ -1094,6 +1094,9 @@ pub struct RunCommand {
     #[argh(option, arg_name = "SOCKET_PATH")]
     /// path to a socket for vhost-user net
     pub vhost_user_net: Vec<VhostUserOption>,
+    #[argh(option, arg_name = "SOCKET_PATH")]
+    /// path to a socket for vhost-user rng
+    pub vhost_user_rng: Vec<VhostUserOption>,
     #[cfg(feature = "audio")]
     #[argh(option, arg_name = "SOCKET_PATH")]
     /// path to a socket for vhost-user snd
@@ -1662,6 +1665,7 @@ impl TryFrom<RunCommand> for super::config::Config {
         cfg.vhost_user_gpu = cmd.vhost_user_gpu;
         cfg.vhost_user_mac80211_hwsim = cmd.vhost_user_mac80211_hwsim;
         cfg.vhost_user_net = cmd.vhost_user_net;
+        cfg.vhost_user_rng = cmd.vhost_user_rng;
         cfg.vhost_user_vsock = cmd.vhost_user_vsock;
         cfg.vhost_user_wl = cmd.vhost_user_wl;
 
