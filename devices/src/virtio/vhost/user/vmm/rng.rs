@@ -4,10 +4,11 @@
 
 use std::{cell::RefCell, os::unix::net::UnixStream, path::Path, thread};
 
-use base::{error, Event, RawDescriptor};
-use data_model::Le64;
+use base::{error, info, Event, RawDescriptor};
 use vm_memory::GuestMemory;
 use vmm_vhost::message::{VhostUserProtocolFeatures, VhostUserVirtioFeatures};
+use virtio_sys::virtio_config::{VIRTIO_F_NOTIFY_ON_EMPTY};
+use virtio_sys::virtio_ring::{VIRTIO_RING_F_INDIRECT_DESC};
 
 use crate::virtio::{
     vhost::user::vmm::{handler::VhostUserHandler, Error, Result},
@@ -30,13 +31,15 @@ impl Rng {
         let socket = UnixStream::connect(socket_path).map_err(Error::SocketConnect)?;
 
         let init_features = VhostUserVirtioFeatures::PROTOCOL_FEATURES.bits();
-        let allow_features = init_features | base_features;
+        let allow_features = dbg!(init_features | base_features
+            | 1 << VIRTIO_F_NOTIFY_ON_EMPTY
+            | 1 << VIRTIO_RING_F_INDIRECT_DESC);
         let allow_protocol_features =
-            VhostUserProtocolFeatures::MQ | VhostUserProtocolFeatures::CONFIG;
+            VhostUserProtocolFeatures::MQ;
 
         let mut handler = VhostUserHandler::new_from_stream(
             socket,
-            QUEUE_SIZES.len() as u64,
+            NUM_QUEUES as u64,
             allow_features,
             init_features,
             allow_protocol_features,
@@ -71,11 +74,14 @@ impl VirtioDevice for Rng {
     }
 
     fn features(&self) -> u64 {
-        self.handler.borrow().avail_features
+        let feat = self.handler.borrow().avail_features;
+        info!("features = 0x{:x}", feat);
+        feat
     }
 
     fn ack_features(&mut self, features: u64) {
-        if let Err(e) = self.handler.borrow_mut().ack_features(features) {
+        info!("acking features: 0x{:x}", features);
+        if let Err(e) = dbg!(self.handler.borrow_mut().ack_features(features)) {
             error!("failed to enable features 0x{:x}: {}", features, e);
         }
     }
@@ -86,12 +92,6 @@ impl VirtioDevice for Rng {
 
     fn queue_max_sizes(&self) -> &[u16] {
         self.queue_sizes.as_slice()
-    }
-
-    fn read_config(&self, offset: u64, data: &mut [u8]) {
-        if let Err(e) = self.handler.borrow_mut().read_config::<Le64>(offset, data) {
-            error!("failed to read config: {}", e);
-        }
     }
 
     fn activate(
